@@ -11,3 +11,24 @@ module "vpc_main" {
 
   tags = {}
 }
+
+# ECR
+module "ecr" {
+  source = "./modules/ecr"
+  name = var.project_name
+}
+
+# Route53
+
+# ACM
+
+# ALB - ACM, DNS, sg, target group
+
+
+# ECS - ALB 연결, sg(inbound - ALB sg, 22)
+
+
+# RDS, sg
+
+
+# S3, IAM
