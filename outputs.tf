@@ -9,3 +9,7 @@ output "ecr_id" {
 output "ecr_arn" {
   value = module.ecr.arn
 }
+
+output "route53_name_servers" {
+  value = module.route53_zone.name_servers
+}
