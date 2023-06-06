@@ -13,3 +13,7 @@ output "ecr_arn" {
 output "route53_name_servers" {
   value = module.route53_zone.name_servers
 }
+
+output "public_ip" {
+  value = module.ecs_instance_eip.public_ip
+}
