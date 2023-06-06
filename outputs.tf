@@ -17,3 +17,7 @@ output "route53_name_servers" {
 output "public_ip" {
   value = module.ecs_instance_eip.public_ip
 }
+
+output "rds_endpoint" {
+  value = aws_db_instance.db.endpoint
+}

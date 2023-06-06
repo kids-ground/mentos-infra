@@ -97,8 +97,36 @@ module "ecs_instance_eip" {
   depends_on = [ module.ecs ]
 }
 
-
 # RDS, sg
+module "rds_sg" {
+  source = "./modules/security_group"
+  name = "${var.project_name}-rds"
+  vpc_id = module.vpc_main.vpc_id
+  inbound_rule = var.db_inbound_rule
+  outbound_rule = var.outbound_rule
+}
+
+resource "aws_db_instance" "db" {
+  identifier = "mentos-rds"
+  vpc_security_group_ids = [ module.rds_sg.id ]
+  availability_zone = var.az_names[0]
+  db_subnet_group_name = "default-vpc-09922e6b00da4b06b"
+  
+  engine = "mysql"
+  engine_version = "8.0.32"
+  instance_class = "db.t4g.micro"
+  
+  db_name = "mentos"
+
+  max_allocated_storage = 1000
+  allocated_storage = 20
+  backup_retention_period = 5 # 백업본 저장기간
+  ca_cert_identifier = "rds-ca-2019"
+  storage_encrypted = true
+
+  copy_tags_to_snapshot = true
+  skip_final_snapshot = true
+}
 
 
 # S3, IAM
