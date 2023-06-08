@@ -34,7 +34,7 @@ resource "aws_instance" "ec2" {
   depends_on = [ aws_ecs_cluster.ecs_cluster ]
 }
 
-# ECS Task Definition
+# ECS Task Definition - 최초 태스크 정의
 resource "aws_ecs_task_definition" "task_definition" {
   family = "${var.name}-ecs-task-definition"
   container_definitions = jsonencode([

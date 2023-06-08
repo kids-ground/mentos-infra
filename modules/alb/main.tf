@@ -49,6 +49,15 @@ resource "aws_alb_target_group" "alb_target_group" {
   target_type = "ip"
   protocol = "HTTP"
   port = var.forwarding_port
+  
+  health_check {
+    healthy_threshold   = "3"
+    interval            = "10"
+    port                = "80"
+    path                = "/health-check"
+    protocol            = "HTTP"
+    unhealthy_threshold = "3"
+  }
 
   lifecycle {
     create_before_destroy = true
