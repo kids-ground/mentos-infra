@@ -64,7 +64,11 @@ module "alb_dns" {
   target_zone_id = module.alb.alb_zone_id
 }
 
-# ECS - ALB 연결, sg(inbound - ALB sg, 22)
+# ECS - ALB 연결, sg(inbound - ALB sg)
+locals {
+  ecs_container_name = "${var.project_name}-ecs-container"
+}
+
 resource "aws_cloudwatch_log_group" "ecs_log_group" {
   name = "${var.project_name}-ecs-cw"
 }
@@ -81,7 +85,7 @@ module "ecs" {
   instance_security_group_id = module.alb_sg.id
   ecs_service_security_group_id = module.alb_sg.id
 
-  container_name = "${var.project_name}-ecs-container"
+  container_name = local.ecs_container_name
   container_port = local.alb_port_forward
   host_port = local.alb_port_forward
 
@@ -97,7 +101,7 @@ module "ecs_instance_eip" {
   depends_on = [ module.ecs ]
 }
 
-# RDS, sg
+# RDS
 module "rds_sg" {
   source = "./modules/security_group"
   name = "${var.project_name}-rds"
@@ -128,5 +132,92 @@ resource "aws_db_instance" "db" {
   skip_final_snapshot = true
 }
 
+# ECS - CodePipeLine Artifact bucket
+resource "aws_s3_bucket" "codepipeline_bucket" {
+  bucket = "${var.project_name}-codepipeline-bucket"
+}
 
-# S3, IAM
+# ECS - CodePipeLine 자동배포
+locals {
+  # 아티팩트를 저장할 S3 버킷의 하위디렉터리를 지정
+  source_output_artifact_name = "source_output"
+  build_output_artifact_name = "build_output"
+}
+
+module "codebuild" {
+  source = "./modules/code_suite/code_build"
+  name = var.project_name
+  artifact_bucket_arn = aws_s3_bucket.codepipeline_bucket.arn
+  container_name = local.ecs_container_name
+  ecr_repo_uri = module.ecr.url
+}
+
+module "codepipeline_iam_role" {
+  source = "./modules/code_suite/iam"
+  name = var.project_name
+  artifact_bucket_arn = aws_s3_bucket.codepipeline_bucket.arn
+  code_build_arn = module.codebuild.arn
+  ecr_arn = module.ecr.arn
+}
+
+resource "aws_codepipeline" "codepipeline" {
+  name = "${var.project_name}-code-pipeline"
+  role_arn = module.codepipeline_iam_role.codepipeline_role_arn
+
+  artifact_store {
+    location = aws_s3_bucket.codepipeline_bucket.bucket
+    type = "S3"
+  }
+
+  stage {
+    name = "Source"
+    action {
+      name = "Source"
+      category = "Source"
+      owner = "AWS"
+      provider = "ECR"
+      version = "1"
+      input_artifacts = [ ]
+      # 해당 디렉터리에 imageDetail.json 파일이 저장
+      output_artifacts = [ local.source_output_artifact_name ]
+      configuration = {
+        RepositoryName = "${module.ecr.repo_name}"
+        ImageTag = "latest"
+      }
+    }
+  }
+
+  stage {
+    name = "Build"
+    action {
+      name = "Build"
+      category = "Build"
+      owner = "AWS"
+      provider = "CodeBuild"
+      version = "1"
+      input_artifacts = [local.source_output_artifact_name]
+      output_artifacts = [local.build_output_artifact_name]
+      # Code Build project 넣기
+      configuration = {
+        ProjectName = module.codebuild.id
+      }
+    }
+  }
+
+  # # S3, ECR, ECS 로의 접근 권한 필요
+  # stage {
+  #   name = "Deploy"
+  #   action {
+  #     name = "Deploy"
+  #     category = "Deploy"
+  #     owner = "AWS"
+  #     provider = "CodeDeployToECS"
+  #     version = "1"
+  #     input_artifacts = [local.build_output_artifact_name]
+      
+  #   }
+  # }
+}
+
+
+# S3 - Image bucket
