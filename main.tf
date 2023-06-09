@@ -204,19 +204,24 @@ resource "aws_codepipeline" "codepipeline" {
     }
   }
 
-  # # S3, ECR, ECS 로의 접근 권한 필요
-  # stage {
-  #   name = "Deploy"
-  #   action {
-  #     name = "Deploy"
-  #     category = "Deploy"
-  #     owner = "AWS"
-  #     provider = "CodeDeployToECS"
-  #     version = "1"
-  #     input_artifacts = [local.build_output_artifact_name]
-      
-  #   }
-  # }
+  # S3, ECR, ECS 로의 접근 권한 필요
+  stage {
+    name = "Deploy"
+    action {
+      name = "Deploy"
+      category = "Deploy"
+      owner = "AWS"
+      provider = "ECS"
+      version = "1"
+      input_artifacts = [local.build_output_artifact_name]
+
+      configuration = {
+        ClusterName: module.ecs.ecs_cluster_name
+        ServiceName: module.ecs.ecs_service_name
+        FileName: "imagedefinitions.json"
+      }
+    }
+  }
 }
 
 
