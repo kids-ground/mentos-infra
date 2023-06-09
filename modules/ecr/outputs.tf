@@ -9,3 +9,7 @@ output "url" {
 output "arn" {
   value = aws_ecr_repository.ecr.arn
 }
+
+output "repo_name" {
+  value = aws_ecr_repository.ecr.name
+}
