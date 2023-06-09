@@ -70,8 +70,8 @@ resource "aws_ecs_task_definition" "task_definition" {
   cpu = 512
 
   depends_on = [ 
-    aws_iam_role.ecs_tasks_role,
-    aws_iam_role.ecs_tasks_execution_role
+    aws_iam_role_policy_attachment.ecs_tasks_role_attachment,
+    aws_iam_role_policy_attachment.ecs_tasks_execution_role_attachment
   ]
 }
 
@@ -108,6 +108,8 @@ resource "aws_appautoscaling_target" "autoscale_target" {
   scalable_dimension = "ecs:service:DesiredCount"
   service_namespace  = "ecs"
   role_arn = aws_iam_role.ecs_autoscale_role.arn
+
+  depends_on = [ aws_iam_role_policy_attachment.ecs_autoscale_role_attachment ]
 }
 
 resource "aws_appautoscaling_policy" "autoscale_policy_cpu" {

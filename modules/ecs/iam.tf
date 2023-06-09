@@ -103,7 +103,7 @@ resource "aws_iam_role_policy_attachment" "ecs_tasks_execution_role_attachment" 
 
 
 
-# ECS Service의 role
+# ECS Service의 role X -> task execution role
 # - 정책(AmazonEC2ContainerServiceRole) - EC2, ALB 접근 관련 권한
 # - 컨테이너를 동적으로 로드밸랜서와 매핑, 해제 하기 위해 필요
 resource "aws_iam_role" "ecs_service_role" {
