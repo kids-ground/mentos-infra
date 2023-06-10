@@ -153,12 +153,17 @@ module "codebuild" {
 }
 
 module "codepipeline_iam_role" {
-  source = "./modules/code_suite/iam"
+  source = "./modules/code_suite/code_pipeline/iam"
   name = var.project_name
   artifact_bucket_arn = aws_s3_bucket.codepipeline_bucket.arn
   code_build_arn = module.codebuild.arn
   ecr_arn = module.ecr.arn
 }
+
+# module "codedeploy_iam_role" {
+#   source = "./modules/code_suite/code_deploy/iam"
+#   name = var.project_name
+# }
 
 resource "aws_codepipeline" "codepipeline" {
   name = "${var.project_name}-code-pipeline"
@@ -214,6 +219,7 @@ resource "aws_codepipeline" "codepipeline" {
       provider = "ECS"
       version = "1"
       input_artifacts = [local.build_output_artifact_name]
+      # role_arn = module.codedeploy_iam_role.arn
 
       configuration = {
         ClusterName: module.ecs.ecs_cluster_name
@@ -222,6 +228,51 @@ resource "aws_codepipeline" "codepipeline" {
       }
     }
   }
+}
+
+# EventBridge - CodePipleLine Trigger
+module "eventbridge_codepipeline_role" {
+  source = "./modules/event_bridge"
+  name = var.project_name
+  codepipeline_arn = aws_codepipeline.codepipeline.arn
+
+  depends_on = [ aws_codepipeline.codepipeline ]
+}
+
+resource "aws_cloudwatch_event_rule" "ecr_push" {
+  name = "${var.project_name}-trigger-event-rule"
+  description = "ECR push Rule"
+  event_pattern = <<EOF
+{
+  "detail-type": [
+    "ECR Image Action"
+  ],
+  "source": [
+    "aws.ecr"
+  ],
+  "detail": {
+    "action-type": [
+      "PUSH"
+    ],
+    "image-tag": [
+      "latest"
+    ],
+    "repository-name": [
+      "${module.ecr.repo_name}"
+    ],
+    "result": [
+      "SUCCESS"
+    ]
+  }
+}
+EOF  
+}
+
+resource "aws_cloudwatch_event_target" "codepipeline" {
+  rule = aws_cloudwatch_event_rule.ecr_push.name
+  target_id = "DeployToECS"
+  arn = aws_codepipeline.codepipeline.arn
+  role_arn = module.eventbridge_codepipeline_role.eventbridge_codepipeline_role_arn
 }
 
 
