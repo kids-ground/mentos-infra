@@ -15,7 +15,9 @@ resource "aws_instance" "ec2" {
   instance_type = "t2.micro" # 프리티어
 
   subnet_id = var.subnet_ids[0]
-  vpc_security_group_ids = [ var.instance_security_group_id ]
+  vpc_security_group_ids = [
+    var.instance_security_group_id
+  ]
   iam_instance_profile = aws_iam_instance_profile.ecs_instance_profile.name
 
   user_data = file("${path.module}/ec2_user_data/user_data.sh")
@@ -48,8 +50,8 @@ resource "aws_ecs_task_definition" "task_definition" {
           "hostPort": var.host_port
         }
       ],
-      "memory": 512,
-      "cpu": 512, # 1024 == 1vCPU
+      "memory": 256,
+      "cpu": 256, # 1024 == 1vCPU
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
@@ -60,14 +62,14 @@ resource "aws_ecs_task_definition" "task_definition" {
       }
     }
   ])
+  memory = 256
+  cpu = 256
 
   task_role_arn = aws_iam_role.ecs_tasks_role.arn # 컨테이너의 어플리케이션의 접근수준(ex. 어플리케이션이 SNS에 접근하는 등의 역할)
   execution_role_arn = aws_iam_role.ecs_tasks_execution_role.arn # 컨테이너 인스턴스에 존재하는 ECS Agent의 접근수준(ex. ECR에서 이미지 받아오기, CloudWatch로 로그보내기 등)
 
-  network_mode = "awsvpc"
+  network_mode = "bridge"
   requires_compatibilities = ["EC2"]
-  memory = 512
-  cpu = 512
 
   depends_on = [ 
     aws_iam_role_policy_attachment.ecs_tasks_role_attachment,
@@ -81,6 +83,7 @@ resource "aws_ecs_service" "service" {
   cluster = aws_ecs_cluster.ecs_cluster.id
   launch_type = "EC2"
   desired_count = 1
+  deployment_maximum_percent = 200
 
   task_definition = aws_ecs_task_definition.task_definition.arn
   
@@ -90,9 +93,9 @@ resource "aws_ecs_service" "service" {
     container_name = "${var.container_name}"
   }
 
-  network_configuration {
-    security_groups = [ var.ecs_service_security_group_id ]
-    subnets = var.subnet_ids
+  deployment_circuit_breaker {
+    enable = true
+    rollback = true
   }
 
   lifecycle {
