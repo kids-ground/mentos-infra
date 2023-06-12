@@ -8,8 +8,8 @@ resource "aws_security_group_rule" "allow_inboud" {
   for_each = var.inbound_rule
   security_group_id = aws_security_group.sg.id
 
-  from_port = each.value["port"]
-  to_port = each.value["port"]
+  from_port = each.value["from_port"]
+  to_port = each.value["to_port"]
   protocol = each.value["protocol"]
   cidr_blocks = each.value["cidr_blocks"]
 }
@@ -19,8 +19,8 @@ resource "aws_security_group_rule" "outbound" {
   for_each = var.outbound_rule
   security_group_id = aws_security_group.sg.id
 
-  from_port = each.value["port"]
-  to_port = each.value["port"]
+  from_port = each.value["from_port"]
+  to_port = each.value["to_port"]
   protocol = each.value["protocol"]
   cidr_blocks = each.value["cidr_blocks"]
 }
