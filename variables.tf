@@ -15,7 +15,6 @@ variable "public_subnets" { }
 variable "private_subnets" { }
 
 variable "alb_inbound_rule" { }
-# variable "ecs_service_inbound_rule" { }
-# variable "ecs_instance_inbound_rule" { }
+variable "ecs_instance_inbound_rule" { }
 variable "db_inbound_rule" { }
 variable "outbound_rule" { }

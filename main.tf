@@ -1,5 +1,6 @@
 locals {
   alb_port_forward = 80
+  ecs_host_port = 0 # ECS가 포트 동적할당
 }
 
 
@@ -69,6 +70,14 @@ locals {
   ecs_container_name = "${var.project_name}-ecs-container"
 }
 
+module "ecs_instance_sg" {
+  source = "./modules/security_group"
+  name = "${var.project_name}-ecs-instance-ec2-sg"
+  vpc_id = module.vpc_main.vpc_id
+  inbound_rule = var.ecs_instance_inbound_rule
+  outbound_rule = var.outbound_rule
+}
+
 resource "aws_cloudwatch_log_group" "ecs_log_group" {
   name = "${var.project_name}-ecs-cw"
 }
@@ -77,17 +86,17 @@ module "ecs" {
   source = "./modules/ecs"
   name = var.project_name
   tags = {}
+  vpc_id = module.vpc_main.vpc_id
 
   ecr_url = module.ecr.url
   cloudwatch_log_group_name = aws_cloudwatch_log_group.ecs_log_group.name
 
   subnet_ids = module.vpc_main.public_subnets_ids
-  instance_security_group_id = module.alb_sg.id
-  ecs_service_security_group_id = module.alb_sg.id
+  instance_security_group_id = module.ecs_instance_sg.id
 
   container_name = local.ecs_container_name
   container_port = local.alb_port_forward
-  host_port = local.alb_port_forward
+  host_port = local.ecs_host_port
 
   key_pair_name = "${var.project_name}_key_pair"
   alb_target_group_arn = module.alb.target_group_arn
@@ -150,6 +159,9 @@ module "codebuild" {
   artifact_bucket_arn = aws_s3_bucket.codepipeline_bucket.arn
   container_name = local.ecs_container_name
   ecr_repo_uri = module.ecr.url
+
+  ecs_cluster_name = module.ecs.ecs_cluster_name
+  ecs_service_name = module.ecs.ecs_service_name
 }
 
 module "codepipeline_iam_role" {
@@ -159,11 +171,6 @@ module "codepipeline_iam_role" {
   code_build_arn = module.codebuild.arn
   ecr_arn = module.ecr.arn
 }
-
-# module "codedeploy_iam_role" {
-#   source = "./modules/code_suite/code_deploy/iam"
-#   name = var.project_name
-# }
 
 resource "aws_codepipeline" "codepipeline" {
   name = "${var.project_name}-code-pipeline"
@@ -219,7 +226,6 @@ resource "aws_codepipeline" "codepipeline" {
       provider = "ECS"
       version = "1"
       input_artifacts = [local.build_output_artifact_name]
-      # role_arn = module.codedeploy_iam_role.arn
 
       configuration = {
         ClusterName: module.ecs.ecs_cluster_name
