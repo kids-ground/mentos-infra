@@ -21,6 +21,14 @@ resource "aws_codebuild_project" "codebuild" {
       name  = "CONTAINER_NAME"
       value = var.container_name
     }
+    environment_variable {
+      name = "ECS_CLUSTER_NAME"
+      value = var.ecs_cluster_name
+    }
+    environment_variable {
+      name = "ECS_SERVICE_NAME"
+      value = var.ecs_service_name
+    }
   }
 
   source {

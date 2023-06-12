@@ -11,5 +11,7 @@ phases:
   post_build:
     commands:
       - printf '[{"name":"%s","imageUri":"%s"}]' $CONTAINER_NAME $REPOSITORY_URI:latest > imagedefinitions.json
+      # 프리티어 EC2의 할당 가능한 ENI 부족으로 awsvpc 네트워크모드에서는 명령어 실행으로 변경
+      # - aws ecs update-service --cluster $ECS_CLUSTER_NAME --service $ECS_SERVICE_NAME --force-new-deployment
 artifacts:
   files: imagedefinitions.json

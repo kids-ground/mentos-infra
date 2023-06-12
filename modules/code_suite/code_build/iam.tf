@@ -37,6 +37,14 @@ data "aws_iam_policy_document" "codebuild_policy" {
       "${var.artifact_bucket_arn}/*"
     ]
   }
+  statement {
+    sid    = "AllowUpdateECS"
+    effect = "Allow"
+
+    actions = ["ecs:*"]
+
+    resources = ["*"]
+  }
 }
 
 resource "aws_iam_role_policy" "codebuild_policy" {
