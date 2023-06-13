@@ -4,6 +4,15 @@ resource "aws_ecs_cluster" "ecs_cluster" {
   name = "${var.name}-ecs-cluster"
 }
 
+# ECS capacity provider
+# resource "aws_ecs_capacity_provider" "provider" {
+#   name = "${var.name}-ecs-capacity-provider"
+
+#   auto_scaling_group_provider {
+#     auto_scaling_group_arn = aws_appauto
+#   }
+# }
+
 # ECS instance
 resource "aws_key_pair" "key_pair" {
   key_name   = "${var.key_pair_name}"
@@ -82,7 +91,7 @@ resource "aws_ecs_service" "service" {
   name = "${var.name}-ecs-service"
   cluster = aws_ecs_cluster.ecs_cluster.id
   launch_type = "EC2"
-  desired_count = 1
+  desired_count = 1 # 실행될 작업의 수 (EC2의 수 아님!)
   deployment_maximum_percent = 200
 
   task_definition = aws_ecs_task_definition.task_definition.arn
@@ -127,6 +136,22 @@ resource "aws_appautoscaling_policy" "autoscale_policy_cpu" {
       predefined_metric_type = "ECSServiceAverageCPUUtilization" # 메모리 - "ECSServiceAverageMemoryUtilization"
     }
     target_value = 80
+  }
+  depends_on = [aws_appautoscaling_target.autoscale_target]
+}
+
+resource "aws_appautoscaling_policy" "autoscale_policy_memory" {
+  name               = "${var.name}-ecs-autoscale-policy-memory"
+  policy_type        = "TargetTrackingScaling"
+  resource_id        = aws_appautoscaling_target.autoscale_target.resource_id
+  scalable_dimension = aws_appautoscaling_target.autoscale_target.scalable_dimension
+  service_namespace  = aws_appautoscaling_target.autoscale_target.service_namespace
+
+  target_tracking_scaling_policy_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ECSServiceAverageMemoryUtilization"
+    }
+    target_value = 65
   }
   depends_on = [aws_appautoscaling_target.autoscale_target]
 }
