@@ -151,7 +151,7 @@ resource "aws_appautoscaling_policy" "autoscale_policy_memory" {
     predefined_metric_specification {
       predefined_metric_type = "ECSServiceAverageMemoryUtilization"
     }
-    target_value = 65
+    target_value = 80
   }
   depends_on = [aws_appautoscaling_target.autoscale_target]
 }
