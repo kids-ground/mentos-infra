@@ -140,18 +140,18 @@ resource "aws_appautoscaling_policy" "autoscale_policy_cpu" {
   depends_on = [aws_appautoscaling_target.autoscale_target]
 }
 
-resource "aws_appautoscaling_policy" "autoscale_policy_memory" {
-  name               = "${var.name}-ecs-autoscale-policy-memory"
-  policy_type        = "TargetTrackingScaling"
-  resource_id        = aws_appautoscaling_target.autoscale_target.resource_id
-  scalable_dimension = aws_appautoscaling_target.autoscale_target.scalable_dimension
-  service_namespace  = aws_appautoscaling_target.autoscale_target.service_namespace
+# resource "aws_appautoscaling_policy" "autoscale_policy_memory" {
+#   name               = "${var.name}-ecs-autoscale-policy-memory"
+#   policy_type        = "TargetTrackingScaling"
+#   resource_id        = aws_appautoscaling_target.autoscale_target.resource_id
+#   scalable_dimension = aws_appautoscaling_target.autoscale_target.scalable_dimension
+#   service_namespace  = aws_appautoscaling_target.autoscale_target.service_namespace
 
-  target_tracking_scaling_policy_configuration {
-    predefined_metric_specification {
-      predefined_metric_type = "ECSServiceAverageMemoryUtilization"
-    }
-    target_value = 80
-  }
-  depends_on = [aws_appautoscaling_target.autoscale_target]
-}
+#   target_tracking_scaling_policy_configuration {
+#     predefined_metric_specification {
+#       predefined_metric_type = "ECSServiceAverageMemoryUtilization"
+#     }
+#     target_value = 80
+#   }
+#   depends_on = [aws_appautoscaling_target.autoscale_target]
+# }
