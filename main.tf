@@ -80,6 +80,7 @@ module "ecs_instance_sg" {
 
 resource "aws_cloudwatch_log_group" "ecs_log_group" {
   name = "${var.project_name}-ecs-cw"
+  retention_in_days = 7
 }
 
 module "ecs" {
@@ -108,37 +109,6 @@ module "ecs_instance_eip" {
   source = "./modules/eip"
   instance_id = module.ecs.ecs_instance_id
   depends_on = [ module.ecs ]
-}
-
-# RDS
-module "rds_sg" {
-  source = "./modules/security_group"
-  name = "${var.project_name}-rds"
-  vpc_id = module.vpc_main.vpc_id
-  inbound_rule = var.db_inbound_rule
-  outbound_rule = var.outbound_rule
-}
-
-resource "aws_db_instance" "db" {
-  identifier = "mentos-rds"
-  vpc_security_group_ids = [ module.rds_sg.id ]
-  availability_zone = var.az_names[0]
-  db_subnet_group_name = "default-vpc-09922e6b00da4b06b"
-  
-  engine = "mysql"
-  engine_version = "8.0.32"
-  instance_class = "db.t4g.micro"
-  
-  db_name = "mentos"
-
-  max_allocated_storage = 1000
-  allocated_storage = 20
-  backup_retention_period = 5 # 백업본 저장기간
-  ca_cert_identifier = "rds-ca-2019"
-  storage_encrypted = true
-
-  copy_tags_to_snapshot = true
-  skip_final_snapshot = true
 }
 
 # ECS - CodePipeLine Artifact bucket
@@ -281,5 +251,27 @@ resource "aws_cloudwatch_event_target" "codepipeline" {
   role_arn = module.eventbridge_codepipeline_role.eventbridge_codepipeline_role_arn
 }
 
+
+# RDS
+module "rds_sg" {
+  source = "./modules/security_group"
+  name = "${var.project_name}-rds"
+  vpc_id = module.vpc_main.vpc_id
+  inbound_rule = var.db_inbound_rule
+  outbound_rule = var.outbound_rule
+}
+
+module "db" {
+  source = "./modules/rds"
+  project_name = var.project_name
+
+  db_subnet_ids = module.vpc_main.private_subnets_ids
+  db_sg_id = module.rds_sg.id
+  db_az_name = var.az_names[0]
+
+  db_name = var.db_name
+  db_username = var.db_username
+  db_password = var.db_password
+}
 
 # S3 - Image bucket

@@ -18,3 +18,7 @@ variable "alb_inbound_rule" { }
 variable "ecs_instance_inbound_rule" { }
 variable "db_inbound_rule" { }
 variable "outbound_rule" { }
+
+variable "db_name" { }
+variable "db_username" { }
+variable "db_password" { }

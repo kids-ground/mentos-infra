@@ -19,5 +19,5 @@ output "public_ip" {
 }
 
 output "rds_endpoint" {
-  value = aws_db_instance.db.endpoint
+  value = module.db.rds_endpoint
 }
