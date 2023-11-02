@@ -59,8 +59,8 @@ resource "aws_ecs_task_definition" "task_definition" {
           "hostPort": var.host_port
         }
       ],
-      "memory": 256,
-      "cpu": 256, # 1024 == 1vCPU
+      "memory": 512,
+      "cpu": 512, # 1024 == 1vCPU
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
@@ -71,8 +71,8 @@ resource "aws_ecs_task_definition" "task_definition" {
       }
     }
   ])
-  memory = 256
-  cpu = 256
+  memory = 512
+  cpu = 512
 
   task_role_arn = aws_iam_role.ecs_tasks_role.arn # 컨테이너의 어플리케이션의 접근수준(ex. 어플리케이션이 SNS에 접근하는 등의 역할)
   execution_role_arn = aws_iam_role.ecs_tasks_execution_role.arn # 컨테이너 인스턴스에 존재하는 ECS Agent의 접근수준(ex. ECR에서 이미지 받아오기, CloudWatch로 로그보내기 등)
