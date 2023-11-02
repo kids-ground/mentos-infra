@@ -95,6 +95,7 @@ resource "aws_ecs_service" "service" {
   deployment_maximum_percent = 200
 
   task_definition = aws_ecs_task_definition.task_definition.arn
+  health_check_grace_period_seconds = 400
   
   load_balancer {
     target_group_arn = var.alb_target_group_arn # service와 연결할 ALB의 target group
