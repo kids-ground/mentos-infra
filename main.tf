@@ -114,6 +114,7 @@ module "ecs_instance_eip" {
 # ECS - CodePipeLine Artifact bucket
 resource "aws_s3_bucket" "codepipeline_bucket" {
   bucket = "${var.project_name}-codepipeline-bucket"
+  force_destroy = true
 }
 
 # ECS - CodePipeLine 자동배포
